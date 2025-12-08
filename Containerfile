@@ -1,42 +1,58 @@
-# 1. Base Image: Use a specific Python image for smaller size and built-in tools
-# This is much better than starting from a full 'ubuntu:latest'
 FROM python:3.11-slim
 
-# 2. Environment Variable: Set a necessary environment variable for Python
+# 1. Environment and Metadata
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    BRAVE_EXECUTABLE=/usr/bin/brave-browser \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    WDM_LOCAL=/tmp/.wdm \
+    XDG_CACHE_HOME=/tmp/.cache
 
-LABEL org.opencontainers.image.source="." \
-      org.opencontainers.image.description="Lightweight Python scraping container"
+LABEL org.opencontainers.image.description="Selenium vs. Playwright Performance Test"
 
-# 3. Working Directory: Set the directory inside the container
+# 2. Working Directory
 WORKDIR /app
 
-# 4. Copy Dependency File: Copy only the requirements first to leverage caching
-# This assumes you have a 'requirements.txt' listing your scraping libraries.
+# 3. Copy Requirements and Install Dependencies (Single Layer Optimization)
 COPY requirements.txt /app/
 
-# 5. Install Python Libraries and Cleanup: Install system dependencies (e.g., needed for certain libraries)
-# 'libpq-dev' and 'build-essential' are common needs, adjust as required.
-# If you use a browser like Selenium, you will need to add those dependencies here.
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends build-essential ca-certificates wget; \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        wget \
+        gnupg \
+        apt-transport-https \
+        libnss3 \
+        libasound2 \
+        libatk-bridge2.0-0 \
+        libgtk-3-0; \
+    # Add Brave APT repo and key (optional)
+    wget -qO- https://brave-browser-apt-release.s3.brave.com/brave-core.asc | gpg --dearmor > /usr/share/keyrings/brave-browser-archive-keyring.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" > /etc/apt/sources.list.d/brave.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends brave-browser; \
+    # prepare shared playwright browsers folder and install python deps
+    mkdir -p /ms-playwright /tmp/.wdm /tmp/.cache; \
     python -m pip install --upgrade pip setuptools wheel; \
     pip install --no-cache-dir -r requirements.txt; \
-    apt-get purge -y --auto-remove build-essential; \
+    # install Playwright browsers into PLAYWRIGHT_BROWSERS_PATH (ENV provides /ms-playwright)
+    python -m playwright install --with-deps chromium firefox webkit; \
+    # cleanup
+    apt-get purge -y --auto-remove build-essential gnupg wget apt-transport-https; \
     rm -rf /var/lib/apt/lists/*
 
-# 6. Create a non-root user and set ownership of app files
+# 4. Security and Code Copy
 RUN groupadd -r app && useradd -r -g app -d /app -s /sbin/nologin app
 
-# 7. Copy Project Code: Copy the rest of your local project code
-# and set ownership to the non-root user
+# copy project and set ownership
 COPY --chown=app:app . /app
 
-# 8. Switch to non-root user
+# ensure playwright browsers and temp wdm/cache dirs are owned by app and /app is writable
+RUN chown -R app:app /app /ms-playwright /tmp/.wdm /tmp/.cache
+
 USER app
 
-# 9. Command: Define the default command to run your main scraping script
-# Replace 'scraper.py' with the name of your main script.
-CMD ["python", "scraper.py"]
+# 5. Execution Command
+CMD ["python", "comparison_selenium_playwright.py"]
