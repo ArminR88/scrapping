@@ -1,0 +1,32 @@
+# Core HTTP clients
+requests>=2.31.0
+httpx>=0.24.0
+aiohttp>=3.8.4
+
+# Parsers / selectors
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+parsel>=1.8.1
+
+# Crawlers / scraping frameworks
+scrapy>=2.8.0
+
+# Headless browser / automation
+selenium>=4.11.2
+webdriver-manager>=4.0.0
+playwright>=1.34.0
+pyppeteer>=1.0.2
+
+# Anti-bot helpers
+cloudscraper>=1.2.68
+fake-useragent>=1.1.1
+
+# Utilities
+tqdm>=4.65.0
+pandas>=2.0.0
+python-dotenv>=1.0.0
+
+# Notes (not parsed by pip):
+# - After installing 'playwright', run: `python -m playwright install` to download browser binaries.
+# - Selenium requires a browser/driver; webdriver-manager can auto-download drivers during runtime.
+# - For lxml/building some packages in slim images you may need system build deps (libxml2-dev, libxslt-dev, build-essential) — ensure the Dockerfile installs them during pip install step.
