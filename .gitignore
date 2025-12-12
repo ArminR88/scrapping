@@ -1,0 +1,21 @@
+# Scraped Data
+# Ignore all directories starting with "scraped_data_" to exclude output.
+scraped_data*/
+
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and editor directories
+.vscode/
+.idea/
+
+# OS-generated files
+.DS_Store
