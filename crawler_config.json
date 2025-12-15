@@ -1,0 +1,10 @@
+{
+    "crawl_settings": {
+        "start_urls": [
+            "https://file-examples.com/index.php/sample-documents-download",
+            "https://www.scrapethissite.com/" 
+        ],
+        "max_depth": 3,
+        "network_timeout_seconds": 30.0
+    }
+}
